@@ -14,6 +14,8 @@ type BloomFilter struct {
 	Store    []bool            // to Store Bitset
 	Size     int32             // Size of the filters
 	mHashers []murmur3.Hash128 // HashFunctions to improve the probabilistic accuracy
+
+	mu sync.Mutex
 }
 
 // NewBloomFilter helps to create a new bloom.Filter with the given size.
@@ -68,10 +70,12 @@ func (bf *BloomFilter) Add(key string) {
 	// index := bf.ComputeMurmurHash(key) % uint64(bf.Size)
 	// bf.Store[index] = true
 	// Utilizing all has functions
+	bf.mu.Lock()
 	for i := 0; i < len(bf.mHashers); i++ {
 		index := bf.ComputeMurmurHash(key, i) % uint64(bf.Size)
 		bf.Store[index] = true
 	}
+	bf.mu.Unlock()
 }
 
 // Exists helps to lookup if the key present in the bloom.Store.
